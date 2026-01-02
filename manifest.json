@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Before You Send",
+  "version": "1.0.0",
+  "description": "Intercepts Gmail sends and shows warnings when necessary",
+  "permissions": [],
+  "content_scripts": [
+    {
+      "matches": ["https://mail.google.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
