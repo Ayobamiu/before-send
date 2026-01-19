@@ -4,6 +4,14 @@
   "version": "1.0.0",
   "description": "Stops you from sending emails you might regret.",
   "permissions": [],
+  "action": {
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "Send Check for Gmail"
+  },
   "content_scripts": [
     {
       "matches": ["https://mail.google.com/*"],
