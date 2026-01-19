@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Before You Send",
+  "name": "Send Check for Gmail",
   "version": "1.0.0",
   "description": "Intercepts Gmail sends and shows warnings when necessary",
   "permissions": [],

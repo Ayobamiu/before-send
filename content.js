@@ -1,10 +1,10 @@
-// Before You Send - Gmail Send Interceptor
+// Send Check for Gmail - Gmail Send Interceptor
 // Content script that runs on Gmail pages
 
 (function () {
   'use strict';
 
-  console.log('Before You Send: Extension loaded on Gmail');
+  console.log('Send Check for Gmail: Extension loaded on Gmail');
 
   let sendIntercepted = false;
   let pendingSendAction = null; // Store the original send method: 'keyboard' or 'button'
@@ -18,7 +18,7 @@
   }
 
   function init() {
-    console.log('Before You Send: Initializing...');
+    console.log('Send Check for Gmail: Initializing...');
     setupSendInterception();
   }
 
@@ -33,7 +33,7 @@
     // Intercept Send button clicks using event delegation
     document.addEventListener('click', handleSendButtonClick, true);
 
-    console.log('Before You Send: Send interception set up');
+    console.log('Send Check for Gmail: Send interception set up');
   }
 
   /**
@@ -56,10 +56,10 @@
 
         // Only process if not already intercepted
         if (!sendIntercepted) {
-          console.log('Before You Send: Intercepted Cmd/Ctrl+Enter');
+          console.log('Send Check for Gmail: Intercepted Cmd/Ctrl+Enter');
           interceptSend('keyboard');
         } else {
-          console.log('Before You Send: Send already intercepted, preventing duplicate');
+          console.log('Send Check for Gmail: Send already intercepted, preventing duplicate');
         }
       }
     }
@@ -87,10 +87,10 @@
 
       // Only process if not already intercepted
       if (!sendIntercepted) {
-        console.log('Before You Send: Intercepted Send button click');
+        console.log('Send Check for Gmail: Intercepted Send button click');
         interceptSend('button');
       } else {
-        console.log('Before You Send: Send already intercepted, preventing duplicate');
+        console.log('Send Check for Gmail: Send already intercepted, preventing duplicate');
       }
     }
   }
@@ -165,13 +165,13 @@
       // Reply windows have: contenteditable with aria-label="Message Body"
       const messageElement = region.querySelector('[contenteditable="true"][aria-label*="Message"]') ||
         region.querySelector('[contenteditable="true"][aria-label*="Compose"]');
-      
+
       // Reply windows use combobox for To field, not input
       const toField = region.querySelector('[aria-label*="To recipients"]') ||
         region.querySelector('[aria-label*="To"]') ||
         region.querySelector('input[aria-label*="To"]') ||
         region.querySelector('input[aria-label*="Recipients"]');
-      
+
       const hasComposeElements = messageElement || toField;
 
       if (hasComposeElements) {
@@ -187,28 +187,28 @@
    */
   function interceptSend(source) {
     if (sendIntercepted) {
-      console.log('Before You Send: Already processing a send, ignoring duplicate');
+      console.log('Send Check for Gmail: Already processing a send, ignoring duplicate');
       return;
     }
 
     sendIntercepted = true;
     pendingSendAction = source; // Store the original send method
-    console.log('Before You Send: Send intercepted from', source);
+    console.log('Send Check for Gmail: Send intercepted from', source);
 
     // Step 3: Extract email data
     const emailData = extractEmailData();
-    console.log('Before You Send: Extracted email data:', emailData);
+    console.log('Send Check for Gmail: Extracted email data:', emailData);
 
     // Step 4: Run rules engine
     const warnings = runRulesEngine(emailData);
-    console.log('Before You Send: Warnings detected:', warnings);
+    console.log('Send Check for Gmail: Warnings detected:', warnings);
 
     // Step 5: Show modal if warnings exist
     if (warnings.length > 0) {
       showWarningModal(warnings);
     } else {
       // No warnings, proceed with send
-      console.log('Before You Send: No warnings, proceeding with send');
+      console.log('Send Check for Gmail: No warnings, proceeding with send');
       setTimeout(() => {
         resumeSend();
       }, 50);
@@ -392,7 +392,7 @@
 
     // Create title
     const title = document.createElement('h2');
-    title.textContent = 'Before You Send';
+    title.textContent = 'Send Check for Gmail';
     title.style.cssText = `
       margin: 0 0 16px 0;
       font-size: 20px;
@@ -483,7 +483,7 @@
     });
     sendAnywayButton.addEventListener('click', () => {
       closeModal();
-      console.log('Before You Send: User chose to send anyway');
+      console.log('Send Check for Gmail: User chose to send anyway');
       resumeSend();
     });
 
@@ -538,7 +538,7 @@
     closeModal();
     sendIntercepted = false;
     pendingSendAction = null;
-    console.log('Before You Send: Send cancelled by user');
+    console.log('Send Check for Gmail: Send cancelled by user');
   }
 
   /**
@@ -547,7 +547,7 @@
    */
   function resumeSend() {
     if (!pendingSendAction) {
-      console.log('Before You Send: No pending send action to resume');
+      console.log('Send Check for Gmail: No pending send action to resume');
       sendIntercepted = false;
       return;
     }
@@ -559,7 +559,7 @@
     pendingSendAction = null;
     isResumingSend = true; // Prevent re-interception
 
-    console.log('Before You Send: Resuming send from', action);
+    console.log('Send Check for Gmail: Resuming send from', action);
 
     // Small delay to ensure state is reset before triggering send
     setTimeout(() => {
@@ -571,7 +571,7 @@
           if (sendButton) {
             sendButton.click();
           } else {
-            console.log('Before You Send: Send button not found, trying alternative method');
+            console.log('Send Check for Gmail: Send button not found, trying alternative method');
             // Fallback: try to find by text content
             const buttons = composeWindow.querySelectorAll('button, div[role="button"]');
             for (const btn of buttons) {
