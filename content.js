@@ -304,13 +304,13 @@
     );
 
     if (mentionsAttachment && !hasAttachment) {
-      warnings.push('Message mentions an attachment but no file is attached');
+      warnings.push('You mentioned an attachment, but didn\'t attach anything.');
     }
 
     // Rule 2: Late-night send
     // Warn if sending between 10pm (22:00) and 6am (06:00)
     if (currentHour >= 22 || currentHour < 6) {
-      warnings.push(`Sending email late at night (${currentHour}:00). Consider scheduling for business hours.`);
+      warnings.push(`It's late (${currentHour}:00). Want to send this during business hours?`);
     }
 
     // Rule 3: Tone heuristic
@@ -325,13 +325,13 @@
     if (significantWords.length > 0) {
       const capsRatio = allCapsWords.length / significantWords.length;
       if (capsRatio > 0.2) {
-        warnings.push('Message contains excessive ALL CAPS text, which may come across as aggressive');
+        warnings.push('This message is mostly in ALL CAPS, which can sound aggressive.');
       }
     }
 
     // Check for excessive exclamation marks (3+ in a row)
     if (messageText.includes('!!!')) {
-      warnings.push('Message contains excessive exclamation marks (!!!)');
+      warnings.push('This message has a lot of exclamation marks (!!!), which can seem intense.');
     }
 
     // Check for strong negative words
@@ -345,7 +345,7 @@
     });
 
     if (hasNegativeWords) {
-      warnings.push('Message contains strong negative language that may be inappropriate');
+      warnings.push('This message sounds a bit tense. Want to soften it?');
     }
 
     return warnings;
@@ -402,7 +402,7 @@
 
     // Create warning message
     const warningText = document.createElement('p');
-    warningText.textContent = 'We detected some potential issues:';
+    warningText.textContent = 'We noticed a few things:';
     warningText.style.cssText = `
       margin: 0 0 16px 0;
       font-size: 14px;
