@@ -167,7 +167,10 @@
     const emailData = extractEmailData();
     console.log('Before You Send: Extracted email data:', emailData);
 
-    // TODO: Step 4 will run checks here
+    // Step 4: Run rules engine
+    const warnings = runRulesEngine(emailData);
+    console.log('Before You Send: Warnings detected:', warnings);
+
     // TODO: Step 5 will show modal if warnings exist
     // TODO: Step 6 will resume send if no warnings or user confirms
   }
@@ -235,6 +238,77 @@
       hasAttachment: hasAttachment,
       currentHour: currentHour
     };
+  }
+
+  /**
+   * Step 4: Rules engine
+   * Checks for: missing attachment, late-night send, tone issues
+   * Returns: Array of warning messages
+   */
+  function runRulesEngine(emailData) {
+    const warnings = [];
+    const { messageText, hasAttachment, currentHour } = emailData;
+
+    // Rule 1: Missing attachment
+    // Check if message mentions attachment-related words but no attachment exists
+    const attachmentKeywords = [
+      'attached', 'included', 'see file', 'see attachment',
+      'find attached', 'enclosed', 'see the file', 'see the attachment',
+      'i\'ve attached', 'i have attached', 'please find attached',
+      'i\'m attaching', 'i am attaching', 'attaching'
+    ];
+
+    const messageLower = messageText.toLowerCase();
+    const mentionsAttachment = attachmentKeywords.some(keyword =>
+      messageLower.includes(keyword)
+    );
+
+    if (mentionsAttachment && !hasAttachment) {
+      warnings.push('Message mentions an attachment but no file is attached');
+    }
+
+    // Rule 2: Late-night send
+    // Warn if sending between 10pm (22:00) and 6am (06:00)
+    if (currentHour >= 22 || currentHour < 6) {
+      warnings.push(`Sending email late at night (${currentHour}:00). Consider scheduling for business hours.`);
+    }
+
+    // Rule 3: Tone heuristic
+    // Check for ALL CAPS, excessive exclamation marks, or strong negative words
+    const messageWords = messageText.split(/\s+/);
+    const allCapsWords = messageWords.filter(word =>
+      word.length > 2 && word === word.toUpperCase() && /[A-Z]/.test(word)
+    );
+
+    // If more than 20% of words (excluding very short words) are ALL CAPS, warn
+    const significantWords = messageWords.filter(word => word.length > 2);
+    if (significantWords.length > 0) {
+      const capsRatio = allCapsWords.length / significantWords.length;
+      if (capsRatio > 0.2) {
+        warnings.push('Message contains excessive ALL CAPS text, which may come across as aggressive');
+      }
+    }
+
+    // Check for excessive exclamation marks (3+ in a row)
+    if (messageText.includes('!!!')) {
+      warnings.push('Message contains excessive exclamation marks (!!!)');
+    }
+
+    // Check for strong negative words
+    const negativeWords = [
+      'hate', 'stupid', 'idiot', 'moron', 'terrible',
+      'awful', 'horrible', 'worst', 'disgusting', 'pathetic'
+    ];
+    const hasNegativeWords = negativeWords.some(word => {
+      const regex = new RegExp(`\\b${word}\\b`, 'i');
+      return regex.test(messageText);
+    });
+
+    if (hasNegativeWords) {
+      warnings.push('Message contains strong negative language that may be inappropriate');
+    }
+
+    return warnings;
   }
 
 })();
