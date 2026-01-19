@@ -7,6 +7,8 @@
   console.log('Before You Send: Extension loaded on Gmail');
 
   let sendIntercepted = false;
+  let pendingSendAction = null; // Store the original send method: 'keyboard' or 'button'
+  let isResumingSend = false; // Flag to prevent re-interception when resuming
 
   // Initialize when DOM is ready
   if (document.readyState === 'loading') {
@@ -67,6 +69,11 @@
    * Handle Send button click
    */
   function handleSendButtonClick(event) {
+    // Skip if we're resuming a send (to prevent re-interception)
+    if (isResumingSend) {
+      return;
+    }
+
     const target = event.target;
 
     // Check if clicked element or its parent is a Send button
@@ -161,6 +168,7 @@
     }
 
     sendIntercepted = true;
+    pendingSendAction = source; // Store the original send method
     console.log('Before You Send: Send intercepted from', source);
 
     // Step 3: Extract email data
@@ -175,9 +183,11 @@
     if (warnings.length > 0) {
       showWarningModal(warnings);
     } else {
-      // No warnings, proceed with send (Step 6 will handle this)
+      // No warnings, proceed with send
       console.log('Before You Send: No warnings, proceeding with send');
-      // TODO: Step 6 will resume send
+      setTimeout(() => {
+        resumeSend();
+      }, 50);
     }
   }
 
@@ -449,9 +459,8 @@
     });
     sendAnywayButton.addEventListener('click', () => {
       closeModal();
-      // Step 6 will handle resuming the send
       console.log('Before You Send: User chose to send anyway');
-      // TODO: Step 6 will resume send
+      resumeSend();
     });
 
     // Assemble modal
@@ -504,7 +513,79 @@
   function cancelSend() {
     closeModal();
     sendIntercepted = false;
+    pendingSendAction = null;
     console.log('Before You Send: Send cancelled by user');
+  }
+
+  /**
+   * Step 6: Resume the original send action
+   * Called when user clicks "Send anyway" or when no warnings exist
+   */
+  function resumeSend() {
+    if (!pendingSendAction) {
+      console.log('Before You Send: No pending send action to resume');
+      sendIntercepted = false;
+      return;
+    }
+
+    const action = pendingSendAction;
+
+    // Reset state
+    sendIntercepted = false;
+    pendingSendAction = null;
+    isResumingSend = true; // Prevent re-interception
+
+    console.log('Before You Send: Resuming send from', action);
+
+    // Small delay to ensure state is reset before triggering send
+    setTimeout(() => {
+      const composeWindow = findComposeWindow();
+      if (composeWindow) {
+        if (action === 'button') {
+          // Find and click the Send button
+          const sendButton = composeWindow.querySelector('[aria-label*="Send"]:not([aria-label*="draft"]):not([aria-label*="schedule"])');
+          if (sendButton) {
+            sendButton.click();
+          } else {
+            console.log('Before You Send: Send button not found, trying alternative method');
+            // Fallback: try to find by text content
+            const buttons = composeWindow.querySelectorAll('button, div[role="button"]');
+            for (const btn of buttons) {
+              const text = btn.textContent.trim();
+              if (text === 'Send' && btn.getAttribute('role') === 'button') {
+                btn.click();
+                break;
+              }
+            }
+          }
+        } else if (action === 'keyboard') {
+          // Trigger keyboard shortcut programmatically
+          // Note: This may not work due to browser security, so we'll try button click as fallback
+          const sendButton = composeWindow.querySelector('[aria-label*="Send"]:not([aria-label*="draft"]):not([aria-label*="schedule"])');
+          if (sendButton) {
+            sendButton.click();
+          } else {
+            // Try to dispatch keyboard event (may not work in all browsers)
+            const isMac = navigator.platform.includes('Mac');
+            const event = new KeyboardEvent('keydown', {
+              key: 'Enter',
+              code: 'Enter',
+              keyCode: 13,
+              metaKey: isMac,
+              ctrlKey: !isMac,
+              bubbles: true,
+              cancelable: true
+            });
+            composeWindow.dispatchEvent(event);
+          }
+        }
+      }
+
+      // Reset flag after a delay to allow send to complete
+      setTimeout(() => {
+        isResumingSend = false;
+      }, 500);
+    }, 100);
   }
 
 })();
