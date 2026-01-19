@@ -171,8 +171,14 @@
     const warnings = runRulesEngine(emailData);
     console.log('Before You Send: Warnings detected:', warnings);
 
-    // TODO: Step 5 will show modal if warnings exist
-    // TODO: Step 6 will resume send if no warnings or user confirms
+    // Step 5: Show modal if warnings exist
+    if (warnings.length > 0) {
+      showWarningModal(warnings);
+    } else {
+      // No warnings, proceed with send (Step 6 will handle this)
+      console.log('Before You Send: No warnings, proceeding with send');
+      // TODO: Step 6 will resume send
+    }
   }
 
   /**
@@ -309,6 +315,196 @@
     }
 
     return warnings;
+  }
+
+  /**
+   * Step 5: Warning modal
+   * Shows a modal overlay with detected issues and action buttons
+   */
+  function showWarningModal(warnings) {
+    // Remove existing modal if any
+    const existingModal = document.getElementById('before-you-send-modal');
+    if (existingModal) {
+      existingModal.remove();
+    }
+
+    // Create modal overlay
+    const modal = document.createElement('div');
+    modal.id = 'before-you-send-modal';
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    `;
+
+    // Create modal content box
+    const modalContent = document.createElement('div');
+    modalContent.style.cssText = `
+      background: white;
+      border-radius: 8px;
+      padding: 24px;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    `;
+
+    // Create title
+    const title = document.createElement('h2');
+    title.textContent = 'Before You Send';
+    title.style.cssText = `
+      margin: 0 0 16px 0;
+      font-size: 20px;
+      font-weight: 600;
+      color: #202124;
+    `;
+
+    // Create warning message
+    const warningText = document.createElement('p');
+    warningText.textContent = 'We detected some potential issues:';
+    warningText.style.cssText = `
+      margin: 0 0 16px 0;
+      font-size: 14px;
+      color: #5f6368;
+    `;
+
+    // Create warnings list
+    const warningsList = document.createElement('ul');
+    warningsList.style.cssText = `
+      margin: 0 0 24px 0;
+      padding-left: 20px;
+      list-style-type: disc;
+    `;
+
+    warnings.forEach(warning => {
+      const listItem = document.createElement('li');
+      listItem.textContent = warning;
+      listItem.style.cssText = `
+        margin-bottom: 8px;
+        font-size: 14px;
+        color: #ea4335;
+        line-height: 1.5;
+      `;
+      warningsList.appendChild(listItem);
+    });
+
+    // Create button container
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.cssText = `
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    `;
+
+    // Create "Fix" button (cancel send)
+    const fixButton = document.createElement('button');
+    fixButton.textContent = 'Fix';
+    fixButton.style.cssText = `
+      padding: 10px 24px;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      background: white;
+      color: #202124;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    `;
+    fixButton.addEventListener('mouseenter', () => {
+      fixButton.style.backgroundColor = '#f8f9fa';
+    });
+    fixButton.addEventListener('mouseleave', () => {
+      fixButton.style.backgroundColor = 'white';
+    });
+    fixButton.addEventListener('click', () => {
+      cancelSend();
+    });
+
+    // Create "Send anyway" button
+    const sendAnywayButton = document.createElement('button');
+    sendAnywayButton.textContent = 'Send anyway';
+    sendAnywayButton.style.cssText = `
+      padding: 10px 24px;
+      border: none;
+      border-radius: 4px;
+      background: #1a73e8;
+      color: white;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    `;
+    sendAnywayButton.addEventListener('mouseenter', () => {
+      sendAnywayButton.style.backgroundColor = '#1765cc';
+    });
+    sendAnywayButton.addEventListener('mouseleave', () => {
+      sendAnywayButton.style.backgroundColor = '#1a73e8';
+    });
+    sendAnywayButton.addEventListener('click', () => {
+      closeModal();
+      // Step 6 will handle resuming the send
+      console.log('Before You Send: User chose to send anyway');
+      // TODO: Step 6 will resume send
+    });
+
+    // Assemble modal
+    buttonContainer.appendChild(fixButton);
+    buttonContainer.appendChild(sendAnywayButton);
+
+    modalContent.appendChild(title);
+    modalContent.appendChild(warningText);
+    modalContent.appendChild(warningsList);
+    modalContent.appendChild(buttonContainer);
+
+    modal.appendChild(modalContent);
+
+    // Add click outside to close (cancel send)
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        cancelSend();
+      }
+    });
+
+    // Handle ESC key to cancel
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' || e.keyCode === 27) {
+        cancelSend();
+        document.removeEventListener('keydown', handleEscape);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+
+    // Add to document
+    document.body.appendChild(modal);
+
+    // Focus on Fix button for accessibility
+    fixButton.focus();
+  }
+
+  /**
+   * Close modal and reset state
+   */
+  function closeModal() {
+    const modal = document.getElementById('before-you-send-modal');
+    if (modal) {
+      modal.remove();
+    }
+  }
+
+  /**
+   * Cancel send (user clicked "Fix" or closed modal)
+   */
+  function cancelSend() {
+    closeModal();
+    sendIntercepted = false;
+    console.log('Before You Send: Send cancelled by user');
   }
 
 })();
