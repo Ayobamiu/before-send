@@ -136,12 +136,16 @@
 
   /**
    * Find the compose window element
+   * Works for both new compose (role="dialog") and reply (role="region")
    */
   function findComposeWindow() {
     // Gmail compose window can be identified by:
-    // - Elements with role="dialog" that contain compose elements
+    // - New compose: role="dialog" that contains compose elements
+    // - Reply: role="region" with data-compose-id that contains compose elements
     const dialogs = document.querySelectorAll('[role="dialog"]');
+    const regions = document.querySelectorAll('[role="region"][data-compose-id]');
 
+    // Check dialogs (new compose)
     for (const dialog of dialogs) {
       // Check if this dialog contains compose-related elements
       const messageElement = dialog.querySelector('[contenteditable="true"][aria-label*="Message"]') ||
@@ -152,6 +156,26 @@
 
       if (hasComposeElements) {
         return dialog;
+      }
+    }
+
+    // Check regions (reply windows)
+    for (const region of regions) {
+      // Check if this region contains compose-related elements
+      // Reply windows have: contenteditable with aria-label="Message Body"
+      const messageElement = region.querySelector('[contenteditable="true"][aria-label*="Message"]') ||
+        region.querySelector('[contenteditable="true"][aria-label*="Compose"]');
+      
+      // Reply windows use combobox for To field, not input
+      const toField = region.querySelector('[aria-label*="To recipients"]') ||
+        region.querySelector('[aria-label*="To"]') ||
+        region.querySelector('input[aria-label*="To"]') ||
+        region.querySelector('input[aria-label*="Recipients"]');
+      
+      const hasComposeElements = messageElement || toField;
+
+      if (hasComposeElements) {
+        return region;
       }
     }
 
